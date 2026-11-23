@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const doc = new DOMParser().parseFromString(
-  readFileSync(join(process.cwd(), "index.html"), "utf8"),
+  readFileSync(join(process.cwd(), "public", "index.html"), "utf8"),
   "text/html"
 );
 

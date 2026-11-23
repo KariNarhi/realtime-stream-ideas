@@ -11,10 +11,10 @@ npm install
 # Serve on localhost:3030
 npm start
 
-# Open index.html in a browser (it is not served by the app)
+# Open http://localhost:3030 in a browser
 ```
 
-The server listens on port 3030 by default; set `PORT` to change it. Note that `render_submit.js` connects to a hardcoded `http://localhost:3030`, so change it there too if you use another port.
+The server serves the front-end from `public/` and listens on port 3030 by default; set `PORT` to change it. The client connects back to the same origin, so no other change is needed.
 
 Ideas are stored in memory and are lost when the server restarts.
 
@@ -36,3 +36,20 @@ npx vitest run test/idea-service.test.js
 | `test/app.integration.test.js` | REST and Socket.io API against a real server, including realtime broadcasts |
 | `test/render.test.js` | Client script behavior (rendering, form submit) with mocked `io`/`feathers` |
 | `test/index-html.test.js` | Form fields, validation attributes and script order in `index.html` |
+
+## End-to-end tests
+
+[Playwright](https://playwright.dev/) tests in `e2e/` drive the real app in Chromium and Firefox, including two-viewer realtime sync.
+
+```bash
+# One-time: download the browsers (stored in ~/Library/Caches/ms-playwright on macOS)
+npx playwright install chromium firefox
+
+# Run the E2E tests (starts its own server on port 3100)
+npm run test:e2e
+
+# One browser / one file
+npx playwright test --project=chromium e2e/realtime.spec.js
+```
+
+The tests are hermetic: the Feathers client, Socket.io client and Bootstrap CDN requests are served from `node_modules`, and Google Fonts requests are blocked, so no network access is needed. Any browser console error, page error or failed request fails the test. Tests run serially because ideas are kept in memory on the server.

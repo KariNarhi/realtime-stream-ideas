@@ -2,6 +2,7 @@ const feathers = require("@feathersjs/feathers");
 const express = require("@feathersjs/express");
 const socketio = require("@feathersjs/socketio");
 const { NotFound } = require("@feathersjs/errors");
+const path = require("path");
 const moment = require("moment");
 
 // Idea service
@@ -60,6 +61,9 @@ function createApp() {
 
   // Enable REST services
   app.configure(express.rest());
+
+  // Serve the front-end (only public/, never app.js or package.json)
+  app.use("/", express.static(path.join(__dirname, "public")));
 
   // Register services
   app.use("/ideas", new IdeaService());

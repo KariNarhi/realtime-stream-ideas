@@ -147,6 +147,26 @@ describe("removing ideas", () => {
   });
 });
 
+describe("static front-end", () => {
+  it("serves index.html at / with the app's scripts", async () => {
+    const res = await fetch(`${url}/`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toMatch(/html/);
+    expect(await res.text()).toContain("render_submit.js");
+  });
+
+  it("serves the stylesheet and client script", async () => {
+    expect((await fetch(`${url}/styles.css`)).headers.get("content-type")).toMatch(/css/);
+    expect((await fetch(`${url}/render_submit.js`)).status).toBe(200);
+  });
+
+  it("does not expose server files", async () => {
+    for (const file of ["app.js", "package.json", "node_modules/moment/package.json"]) {
+      expect((await fetch(`${url}/${file}`)).status).toBe(404);
+    }
+  });
+});
+
 describe("CORS", () => {
   it("allows Socket.io polling requests from other origins (e.g. file://)", async () => {
     const res = await fetch(`${url}/socket.io/?EIO=4&transport=polling`, {

@@ -3,12 +3,13 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const html = readFileSync(join(process.cwd(), "index.html"), "utf8");
-const script = readFileSync(join(process.cwd(), "render_submit.js"), "utf8");
+const html = readFileSync(join(process.cwd(), "public", "index.html"), "utf8");
+const script = readFileSync(join(process.cwd(), "public", "render_submit.js"), "utf8");
 
 let service, listeners, ioMock;
 
 async function load(existing = []) {
+  delete document.body.dataset.ready; // <body> survives between tests
   document.body.innerHTML = html.match(/<body[^>]*>([\s\S]*)<\/body>/)[1].replace(/<script[\s\S]*?<\/script>/g, "");
   listeners = {};
   service = {
@@ -30,9 +31,14 @@ async function load(existing = []) {
 const idea = (o = {}) => ({ id: 0, text: "Doom", tech: "mods", viewer: "Ann", time: "1:00:00 pm", ...o });
 
 describe("client script", () => {
-  it("connects to localhost:3030", async () => {
+  it("connects to the same origin", async () => {
     await load();
-    expect(ioMock).toHaveBeenCalledWith("http://localhost:3030");
+    expect(ioMock).toHaveBeenCalledWith();
+  });
+
+  it("marks the page ready once listeners are registered", async () => {
+    await load();
+    expect(document.body.dataset.ready).toBe("true");
   });
 
   it("renders existing ideas from find() and listens for created", async () => {

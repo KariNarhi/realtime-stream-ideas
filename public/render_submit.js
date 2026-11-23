@@ -1,5 +1,5 @@
 // Socket.io setup
-const socket = io("http://localhost:3030");
+const socket = io();
 // Init feathers app
 const app = feathers();
 // Register socket.io to talk to server
@@ -68,5 +68,7 @@ async function init() {
   app.service("ideas").on("created", renderIdea);
   // Remove idea in realtime
   app.service("ideas").on("removed", removeIdeaCard);
+  // Signal that the initial load is done and realtime listeners are active
+  document.body.dataset.ready = "true";
 }
 init();

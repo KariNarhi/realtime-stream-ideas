@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const css = readFileSync(join(process.cwd(), "styles.css"), "utf8");
+const css = readFileSync(join(process.cwd(), "public", "styles.css"), "utf8");
 
 describe("styles.css", () => {
   it.each([
