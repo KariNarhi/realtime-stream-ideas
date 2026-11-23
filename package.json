@@ -1,18 +1,25 @@
 {
   "name": "realtime-stream-ideas",
   "version": "1.0.0",
-  "description": "",
+  "description": "A simple real-time streaming application using FeathersJS and Socket.io",
   "main": "app.js",
   "scripts": {
-    "start": "node app"
+    "start": "node app",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@feathersjs/errors": "^5.0.50",
     "@feathersjs/express": "^5.0.51",
     "@feathersjs/feathers": "^5.0.50",
-    "@feathersjs/socketio": "^5.0.11",
+    "@feathersjs/socketio": "^5.0.51",
     "moment": "^2.31.0"
+  },
+  "devDependencies": {
+    "jsdom": "^31.0.1",
+    "socket.io-client": "^4.8.4",
+    "vitest": "^5.1.1"
   }
 }
