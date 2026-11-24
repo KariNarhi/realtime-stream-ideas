@@ -1,4 +1,4 @@
-const { test, expect, openApp, addIdea } = require("./fixtures");
+import { test, expect, openApp, addIdea } from "./fixtures.ts";
 
 test.describe("delete and clear", () => {
   test.beforeEach(async ({ page }) => openApp(page));
@@ -51,15 +51,15 @@ test.describe("delete and clear", () => {
 
   test("× sits in the card's top-right corner and Clear sits below Suggest Idea", async ({ page }) => {
     await addIdea(page);
-    const card = await page.locator("#ideas .card").boundingBox();
-    const x = await page.locator("#ideas .delete-idea").boundingBox();
+    const card = (await page.locator("#ideas .card").boundingBox())!;
+    const x = (await page.locator("#ideas .delete-idea").boundingBox())!;
     await expect(page.locator("#ideas .delete-idea")).toBeVisible();
     expect(x.x + x.width).toBeLessThanOrEqual(card.x + card.width);
     expect(x.x).toBeGreaterThan(card.x + card.width / 2);
     expect(x.y - card.y).toBeLessThan(40);
 
-    const submit = await page.getByRole("button", { name: "Suggest Idea" }).boundingBox();
-    const clear = await page.getByRole("button", { name: "Clear" }).boundingBox();
+    const submit = (await page.getByRole("button", { name: "Suggest Idea" }).boundingBox())!;
+    const clear = (await page.getByRole("button", { name: "Clear" }).boundingBox())!;
     expect(clear.y).toBeGreaterThan(submit.y + submit.height - 1);
   });
 });

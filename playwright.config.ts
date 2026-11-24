@@ -1,9 +1,9 @@
-const { defineConfig, devices } = require("@playwright/test");
+import { defineConfig, devices } from "@playwright/test";
 
 // Dedicated port so E2E runs never clash with a dev server on 3030
 const PORT = 3100;
 
-module.exports = defineConfig({
+export default defineConfig({
   testDir: "e2e",
   // The server keeps ideas in memory, so tests share state and must run serially
   fullyParallel: false,
@@ -18,7 +18,7 @@ module.exports = defineConfig({
     { name: "firefox", use: { ...devices["Desktop Firefox"] } }
   ],
   webServer: {
-    command: "node app.js",
+    command: "npm run build && node src/app.ts",
     env: { PORT: String(PORT) },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: false

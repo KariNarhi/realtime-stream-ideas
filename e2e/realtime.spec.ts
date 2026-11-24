@@ -1,6 +1,7 @@
-const { test, expect, openApp, addIdea } = require("./fixtures");
+import type { Page } from "@playwright/test";
+import { test, expect, openApp, addIdea } from "./fixtures.ts";
 
-async function openSecondViewer(openTab) {
+async function openSecondViewer(openTab: () => Promise<Page>) {
   const other = await openTab();
   await openApp(other);
   return other;

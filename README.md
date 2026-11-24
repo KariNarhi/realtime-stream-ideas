@@ -8,13 +8,15 @@ Based on the Real-time App With Feathers.js, Socket.io & Express by Traversy Med
 # Install dependencies
 npm install
 
-# Serve on localhost:3030
+# Compile the browser script and serve on localhost:3030
 npm start
 
 # Open http://localhost:3030 in a browser
 ```
 
 The server serves the front-end from `public/` and listens on port 3030 by default; set `PORT` to change it. The client connects back to the same origin, so no other change is needed.
+
+The project is written in TypeScript. The server runs directly on Node's built-in type stripping, so **Node 22.18 or newer** is required; the browser script `src/render_submit.ts` is compiled to `public/render_submit.js` by `npm run build` (run automatically by `npm start`, `npm test` and `npm run test:e2e`). Use `npm run typecheck` to type-check everything.
 
 Ideas are stored in memory and are lost when the server restarts.
 
@@ -27,7 +29,7 @@ Tests use [Vitest](https://vitest.dev/) (with jsdom for the browser-side tests).
 npm test
 
 # Run a single test file
-npx vitest run test/idea-service.test.js
+npx vitest run test/idea-service.test.ts
 
 # Interactive Vitest UI (watch mode)
 npm run test:ui
@@ -40,10 +42,10 @@ Locally `npm test` prints the default report and writes an HTML report; when the
 
 | File | Covers |
 | --- | --- |
-| `test/idea-service.test.js` | `IdeaService` unit tests |
-| `test/app.integration.test.js` | REST and Socket.io API against a real server, including realtime broadcasts |
-| `test/render.test.js` | Client script behavior (rendering, form submit) with mocked `io`/`feathers` |
-| `test/index-html.test.js` | Form fields, validation attributes and script order in `index.html` |
+| `test/idea-service.test.ts` | `IdeaService` unit tests |
+| `test/app.integration.test.ts` | REST and Socket.io API against a real server, including realtime broadcasts |
+| `test/render.test.ts` | Client script behavior (rendering, form submit) with mocked `io`/`feathers` |
+| `test/index-html.test.ts` | Form fields, validation attributes and script order in `index.html` |
 
 ## End-to-end tests
 
@@ -57,7 +59,7 @@ npx playwright install chromium firefox
 npm run test:e2e
 
 # One browser / one file
-npx playwright test --project=chromium e2e/realtime.spec.js
+npx playwright test --project=chromium e2e/realtime.spec.ts
 
 # Interactive UI mode
 npm run test:e2e:ui

@@ -1,4 +1,4 @@
-const { test, expect, openApp, addIdea } = require("./fixtures");
+import { test, expect, openApp, addIdea } from "./fixtures.ts";
 
 test.describe("submitting ideas", () => {
   test.beforeEach(async ({ page }) => openApp(page));
@@ -27,7 +27,7 @@ test.describe("submitting ideas", () => {
   });
 
   test.describe("maxlength", () => {
-    for (const [id, max] of [["idea-text", 30], ["idea-tech", 30], ["idea-viewer", 20]]) {
+    for (const [id, max] of [["idea-text", 30], ["idea-tech", 30], ["idea-viewer", 20]] as const) {
       test(`#${id} accepts at most ${max} characters`, async ({ page }) => {
         const input = page.locator(`#${id}`);
         await input.pressSequentially("x".repeat(max + 10));

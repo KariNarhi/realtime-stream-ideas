@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createRequire } from "node:module";
-
-const { IdeaService } = createRequire(import.meta.url)("../app.js");
+import { IdeaService, type Idea, type IdeaData } from "../src/app.ts";
 
 describe("IdeaService", () => {
-  let service;
+  let service: IdeaService;
   beforeEach(() => {
     service = new IdeaService();
   });
@@ -19,7 +17,7 @@ describe("IdeaService", () => {
   });
 
   it("create() assigns sequential ids", async () => {
-    const ids = [];
+    const ids: number[] = [];
     for (let i = 0; i < 3; i++) {
       ids.push((await service.create({ text: "a", tech: "b", viewer: "c" })).id);
     }
@@ -29,7 +27,7 @@ describe("IdeaService", () => {
   it("find() returns ideas in insertion order", async () => {
     await service.create({ text: "first", tech: "t", viewer: "v" });
     await service.create({ text: "second", tech: "t", viewer: "v" });
-    expect((await service.find()).map(i => i.text)).toEqual(["first", "second"]);
+    expect((await service.find()).map((i: Idea) => i.text)).toEqual(["first", "second"]);
   });
 
   it("ignores unknown fields and client-supplied id/time", async () => {
@@ -40,14 +38,14 @@ describe("IdeaService", () => {
       text: "a",
       tech: "b",
       viewer: "c"
-    });
+    } as IdeaData);
     expect(idea.id).toBe(0);
     expect(idea.time).not.toBe("bogus");
     expect(idea).not.toHaveProperty("extra");
   });
 
   it("leaves missing fields undefined (no validation)", async () => {
-    const idea = await service.create({});
+    const idea = await service.create({} as never);
     expect(idea.text).toBeUndefined();
     expect(idea.tech).toBeUndefined();
     expect(idea.viewer).toBeUndefined();
@@ -59,14 +57,14 @@ describe("IdeaService", () => {
   });
 
   describe("remove", () => {
-    const add = text => service.create({ text, tech: "t", viewer: "v" });
+    const add = (text: string) => service.create({ text, tech: "t", viewer: "v" });
 
     it("removes and returns a single idea by id", async () => {
       await add("a");
       const b = await add("b");
       await add("c");
       expect(await service.remove(b.id)).toEqual(b);
-      expect((await service.find()).map(i => i.text)).toEqual(["a", "c"]);
+      expect((await service.find()).map((i: Idea) => i.text)).toEqual(["a", "c"]);
     });
 
     it("accepts string ids (as sent over REST)", async () => {
@@ -84,8 +82,8 @@ describe("IdeaService", () => {
     it("remove(null) clears all ideas and returns them", async () => {
       await add("a");
       await add("b");
-      const removed = await service.remove(null);
-      expect(removed.map(i => i.text)).toEqual(["a", "b"]);
+      const removed = (await service.remove(null)) as Idea[];
+      expect(removed.map((i: Idea) => i.text)).toEqual(["a", "b"]);
       expect(await service.find()).toEqual([]);
     });
 

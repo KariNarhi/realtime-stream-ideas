@@ -1,4 +1,4 @@
-const { test, expect, openApp, addIdea } = require("./fixtures");
+import { test, expect, openApp, addIdea } from "./fixtures.ts";
 
 // Documented bugs: marked test.fail() so they pass while the bug exists and
 // turn red (prompting removal of the marker) once the bug is fixed.

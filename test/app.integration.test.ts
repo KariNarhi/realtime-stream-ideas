@@ -1,27 +1,29 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createRequire } from "node:module";
-import { io } from "socket.io-client";
+import type { AddressInfo } from "node:net";
+import type { Server } from "node:http";
+import { io, type Socket } from "socket.io-client";
+import { createApp, type Idea } from "../src/app.ts";
 
-const { createApp } = createRequire(import.meta.url)("../app.js");
+const portOf = (s: Server) => (s.address() as AddressInfo).port;
 
-const emit = (socket, ...args) =>
-  new Promise((resolve, reject) =>
-    socket.emit(...args, (err, res) => (err ? reject(err) : resolve(res)))
+const emit = (socket: Socket, ...args: unknown[]) =>
+  new Promise<any>((resolve, reject) =>
+    socket.emit(args[0] as string, ...args.slice(1), (err: unknown, res: unknown) => (err ? reject(err) : resolve(res)))
   );
-const once = (socket, event) => new Promise(resolve => socket.once(event, resolve));
-const connect = url =>
-  new Promise((resolve, reject) => {
+const once = (socket: Socket, event: string) => new Promise<any>(resolve => socket.once(event, resolve));
+const connect = (url: string) =>
+  new Promise<Socket>((resolve, reject) => {
     const s = io(url, { forceNew: true, transports: ["websocket"] });
     s.once("connect", () => resolve(s));
     s.once("connect_error", reject);
   });
 
-let server, url, sockets;
+let server: Server, url: string, sockets: Socket[];
 
 beforeEach(async () => {
   sockets = [];
   server = await createApp().listen(0);
-  url = `http://localhost:${server.address().port}`;
+  url = `http://localhost:${portOf(server)}`;
 });
 
 afterEach(async () => {
@@ -35,7 +37,7 @@ const client = async () => {
   return s;
 };
 
-const post = body =>
+const post = (body: string) =>
   fetch(`${url}/ideas`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -94,7 +96,7 @@ describe("Socket.io", () => {
 });
 
 describe("removing ideas", () => {
-  const seed = async n => {
+  const seed = async (n: number) => {
     for (let i = 0; i < n; i++) {
       await post(JSON.stringify({ text: `idea${i}`, tech: "t", viewer: "v" }));
     }
@@ -106,7 +108,7 @@ describe("removing ideas", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ id: 0, text: "idea0" });
     const list = await (await fetch(`${url}/ideas`)).json();
-    expect(list.map(i => i.id)).toEqual([1]);
+    expect(list.map((i: Idea) => i.id)).toEqual([1]);
   });
 
   it("DELETE /ideas/:id returns 404 for an unknown id", async () => {
@@ -134,8 +136,8 @@ describe("removing ideas", () => {
   it("clearing over the socket emits one removed event per idea", async () => {
     await seed(3);
     const s = await client();
-    const removedIds = [];
-    s.on("ideas removed", idea => removedIds.push(idea.id));
+    const removedIds: number[] = [];
+    s.on("ideas removed", (idea: Idea) => removedIds.push(idea.id));
     await emit(s, "remove", "ideas", null);
     await vi.waitFor(() => expect(removedIds.sort()).toEqual([0, 1, 2]));
     expect(await emit(s, "find", "ideas")).toEqual([]);
@@ -161,7 +163,7 @@ describe("static front-end", () => {
   });
 
   it("does not expose server files", async () => {
-    for (const file of ["app.js", "package.json", "node_modules/moment/package.json"]) {
+    for (const file of ["src/app.ts", "app.ts", "render_submit.ts", "package.json", "node_modules/moment/package.json"]) {
       expect((await fetch(`${url}/${file}`)).status).toBe(404);
     }
   });
@@ -182,7 +184,7 @@ describe("createApp", () => {
     try {
       await post(JSON.stringify({ text: "a", tech: "b", viewer: "c" }));
       const list = await (
-        await fetch(`http://localhost:${other.address().port}/ideas`)
+        await fetch(`http://localhost:${portOf(other)}/ideas`)
       ).json();
       expect(list).toEqual([]);
     } finally {

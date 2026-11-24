@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2023", "dom"],
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true
+  },
+  // src/ holds both server and client code, so editors (which use this file) see the client script together with its
+  // CDN globals in globals.d.ts; the client is still emitted via tsconfig.client.json
+  "include": ["src", "test", "e2e", "*.config.ts"]
+}

@@ -1,4 +1,4 @@
-const { test, expect, openApp } = require("./fixtures");
+import { test, expect, openApp } from "./fixtures.ts";
 
 test.describe("page load", () => {
   test("loads with the form, an empty list and both buttons, without browser errors", async ({ page }) => {
@@ -13,10 +13,14 @@ test.describe("page load", () => {
 
   test("loads the Feathers client and Socket.io client globals", async ({ page }) => {
     await openApp(page);
-    const globals = await page.evaluate(() => ({
-      feathers: typeof feathers === "function" && typeof feathers.socketio === "function",
-      socketio: typeof io === "function" && typeof io.Manager === "function"
-    }));
+    const globals = await page.evaluate(() => {
+      // CDN globals are untyped here (they only exist inside the page)
+      const w = window as unknown as Record<string, any>;
+      return {
+        feathers: typeof w.feathers === "function" && typeof w.feathers.socketio === "function",
+        socketio: typeof w.io === "function" && typeof w.io.Manager === "function"
+      };
+    });
     expect(globals).toEqual({ feathers: true, socketio: true });
   });
 
@@ -24,7 +28,7 @@ test.describe("page load", () => {
     await openApp(page);
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundImage);
     expect(bg).toContain("linear-gradient");
-    const nav = await page.evaluate(() => getComputedStyle(document.querySelector(".app-nav")).backgroundColor);
+    const nav = await page.evaluate(() => getComputedStyle(document.querySelector(".app-nav")!).backgroundColor);
     expect(nav).toBe("rgb(59, 20, 107)"); // deep violet
   });
 });

@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022", "dom"],
+    "types": [],
+    "strict": true,
+    "skipLibCheck": true,
+    "rootDir": "src",
+    "outDir": "public"
+  },
+  "include": ["src/render_submit.ts", "src/globals.d.ts"],
+  "exclude": []
+}

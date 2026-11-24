@@ -1,21 +1,29 @@
+interface Idea {
+  id: number;
+  text: string;
+  tech: string;
+  viewer: string;
+  time: string;
+}
+
 // Socket.io setup
 const socket = io();
 // Init feathers app
 const app = feathers();
 // Register socket.io to talk to server
 app.configure(feathers.socketio(socket));
-document.getElementById("form").addEventListener("submit", sendIdea);
-document.getElementById("clear").addEventListener("click", clearIdeas);
+document.getElementById("form")!.addEventListener("submit", sendIdea);
+document.getElementById("clear")!.addEventListener("click", clearIdeas);
 // Delegated: cards are re-created whenever a new idea is rendered
-document.getElementById("ideas").addEventListener("click", e => {
-  const button = e.target.closest(".delete-idea");
-  if (button) deleteIdea(button.dataset.id);
+document.getElementById("ideas")!.addEventListener("click", e => {
+  const button = (e.target as Element).closest<HTMLElement>(".delete-idea");
+  if (button) deleteIdea(button.dataset.id!);
 });
-async function sendIdea(e) {
+async function sendIdea(e: Event) {
   e.preventDefault();
-  const text = document.getElementById("idea-text");
-  const tech = document.getElementById("idea-tech");
-  const viewer = document.getElementById("idea-viewer");
+  const text = document.getElementById("idea-text") as HTMLInputElement;
+  const tech = document.getElementById("idea-tech") as HTMLInputElement;
+  const viewer = document.getElementById("idea-viewer") as HTMLInputElement;
   // Create new idea
   app.service("ideas").create({
     text: text.value,
@@ -27,21 +35,21 @@ async function sendIdea(e) {
   tech.value = "";
   viewer.value = "";
 }
-function deleteIdea(id) {
+function deleteIdea(id: string) {
   // The card is removed when the server's "removed" event arrives
   return app.service("ideas").remove(Number(id));
 }
 function clearIdeas() {
   return app.service("ideas").remove(null);
 }
-function removeIdeaCard(idea) {
+function removeIdeaCard(idea: Idea) {
   const card = document.querySelector(`#ideas [data-id="${idea.id}"]`);
   if (card) card.remove();
 }
-function renderIdea(idea) {
+function renderIdea(idea: Idea) {
   document.getElementById(
     "ideas"
-  ).innerHTML += `<div class="card idea-card my-3" data-id="${idea.id}">
+  )!.innerHTML += `<div class="card idea-card my-3" data-id="${idea.id}">
         <button
           type="button"
           class="delete-idea"
