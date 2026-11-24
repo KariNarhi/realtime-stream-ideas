@@ -9,7 +9,9 @@ module.exports = defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  reporter: "list",
+  // CI: compact dot output. Locally: live list plus an HTML report (playwright-report/).
+  // open "never" so a failed run doesn't block the terminal serving the report.
+  reporter: process.env.CI ? "dot" : [["list"], ["html", { open: "never" }]],
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure" },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },

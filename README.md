@@ -28,7 +28,15 @@ npm test
 
 # Run a single test file
 npx vitest run test/idea-service.test.js
+
+# Interactive Vitest UI (watch mode)
+npm run test:ui
+
+# Open the HTML report of the last run (.vitest/)
+npm run test:report
 ```
+
+Locally `npm test` prints the default report and writes an HTML report; when the `CI` environment variable is set, it uses the compact `dot` reporter instead.
 
 | File | Covers |
 | --- | --- |
@@ -50,6 +58,14 @@ npm run test:e2e
 
 # One browser / one file
 npx playwright test --project=chromium e2e/realtime.spec.js
+
+# Interactive UI mode
+npm run test:e2e:ui
+
+# Open the HTML report of the last run (playwright-report/)
+npm run test:e2e:report
 ```
+
+Locally the tests print a live list and write an HTML report; when the `CI` environment variable is set, they use the compact `dot` reporter instead.
 
 The tests are hermetic: the Feathers client, Socket.io client and Bootstrap CDN requests are served from `node_modules`, and Google Fonts requests are blocked, so no network access is needed. Any browser console error, page error or failed request fails the test. Tests run serially because ideas are kept in memory on the server.

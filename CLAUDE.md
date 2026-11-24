@@ -9,6 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Open `http://localhost:3030` to use the app.
 
 - `npm run test:e2e` — Playwright E2E tests (Chromium + Firefox, `e2e/`, server on port 3100; first run `npx playwright install chromium firefox`)
+- `npm run test:e2e:ui` — Playwright UI mode; `npm run test:e2e:report` — open the HTML report (reporters: list + html locally, dot when `CI` is set)
+- `npm run test:ui` — Vitest UI; `npm run test:report` — open the Vitest HTML report in `.vitest/` (reporters: default + html locally, dot when `CI` is set)
 - `npm test` — run Vitest (`test/`); single file: `npx vitest run test/idea-service.test.js`
 
 There is no build or lint setup. `app.js` exports `{ IdeaService, createApp }` and only listens when run directly. `public/render_submit.js` is a classic browser script with no exports; tests evaluate its source with stubbed `io`/`feathers`.
