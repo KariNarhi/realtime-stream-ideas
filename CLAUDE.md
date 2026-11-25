@@ -18,7 +18,7 @@ The project is TypeScript (ESM, erasable syntax only). The server (`src/app.ts`)
 
 ## Architecture
 
-Styling lives in `public/styles.css` (GTA VI palette as CSS variables, Bebas Neue + Poppins), loaded after Bootstrap in `index.html`; cards rendered by `src/render_submit.ts` use the `idea-card`/`delete-idea` classes.
+Styling: `public/gta-vi-theme.css` is the portable GTA VI theme (palette as CSS variables, Bebas Neue + Poppins, navbar/title/inputs/buttons); `public/styles.css` holds app-specific card styles. Both load after Bootstrap in `index.html`; cards rendered by `src/render_submit.ts` use the `idea-card`/`delete-idea` classes.
 
 Small real-time app where viewers submit ideas for a livestream. Two halves:
 
