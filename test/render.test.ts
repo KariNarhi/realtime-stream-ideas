@@ -3,19 +3,25 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import { join } from "node:path";
-import type { Idea } from "../src/app.ts";
+import type { Idea } from "../src/idea.js";
+import { FIELD_IDS } from "./helpers.ts";
 
 const html = readFileSync(join(process.cwd(), "public", "index.html"), "utf8");
 // The browser script is TypeScript; strip the types so it can be evaluated like the compiled output
 const script = stripTypeScriptTypes(readFileSync(join(process.cwd(), "src", "render_submit.ts"), "utf8"));
 
+// These tests run the real browser script in jsdom against the real index.html, with the
+// Feathers/Socket.io CDN globals replaced by mocks (no server involved).
 type Listener = (idea: Idea) => void;
+// Mock of app.service("ideas"): lets tests check which calls the script makes
 let service: {
   create: ReturnType<typeof vi.fn>;
   find: ReturnType<typeof vi.fn>;
   remove: ReturnType<typeof vi.fn>;
   on: ReturnType<typeof vi.fn>;
 };
+// Handlers the script registered via service.on(event, fn). Calling listeners.created(idea)
+// simulates the server pushing an event to this viewer.
 let listeners: Record<string, Listener>;
 let ioMock: ReturnType<typeof vi.fn>;
 
@@ -24,6 +30,7 @@ const first = <T extends HTMLElement = HTMLElement>(selector: string) => documen
 const all = (selector: string) => document.querySelectorAll<HTMLElement>(selector);
 
 
+// Fresh page + script run per test. `existing` is what the mocked find() returns on load.
 async function load(existing: Idea[] = []) {
   delete document.body.dataset.ready; // <body> survives between tests
   document.body.innerHTML = html.match(/<body[^>]*>([\s\S]*)<\/body>/)![1].replace(/<script[\s\S]*?<\/script>/g, "");
@@ -40,7 +47,7 @@ async function load(existing: Idea[] = []) {
   // Evaluate as a classic script so top-level function declarations become globals, like in the browser.
   const run = new Function("io", "feathers", `${script}\nreturn { renderIdea, sendIdea, init, deleteIdea, clearIdeas, removeIdeaCard };`);
   const api = run(ioMock, feathersMock);
-  await new Promise(r => setTimeout(r));
+  await new Promise(r => setTimeout(r)); // let init() finish its async find()
   return { api, feathersMock };
 }
 
@@ -84,6 +91,7 @@ describe("client script", () => {
     expect(cards[1].textContent).toContain("Two");
   });
 
+  // XSS regression: user input must show as text and never become DOM elements
   it("escapes HTML in idea text", async () => {
     const { api } = await load();
     api.renderIdea(idea({ text: '<img src="x" id="pwned">' }));
@@ -101,6 +109,7 @@ describe("client script", () => {
     expect(text).toContain("<u id=m>");
   });
 
+  // The script only sends the idea; the card is rendered later from the server's "created" event
   it("submitting the form creates an idea and clears inputs", async () => {
     await load();
     byId("idea-text").value = "Doom";
@@ -110,7 +119,7 @@ describe("client script", () => {
     byId("form").dispatchEvent(ev);
     expect(ev.defaultPrevented).toBe(true);
     expect(service.create).toHaveBeenCalledWith({ text: "Doom", tech: "mods", viewer: "Ann" });
-    for (const id of ["idea-text", "idea-tech", "idea-viewer"]) {
+    for (const id of FIELD_IDS) {
       expect(byId(id).value).toBe("");
     }
   });
@@ -133,6 +142,7 @@ describe("client script", () => {
       expect(service.remove).toHaveBeenCalledWith(2);
     });
 
+    // Click handling is delegated on #ideas, so it survives innerHTML re-parsing of existing cards
     it("still works for cards rendered after the first ones", async () => {
       await load([idea({ id: 1 })]);
       listeners.created(idea({ id: 2 }));
@@ -140,6 +150,7 @@ describe("client script", () => {
       expect(service.remove).toHaveBeenCalledWith(2);
     });
 
+    // Deletion is server-driven: the card goes away only when the "removed" event arrives
     it("does not remove the card until the server confirms", async () => {
       await load([idea({ id: 1 })]);
       first(".delete-idea").click();

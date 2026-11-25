@@ -36,6 +36,7 @@ export async function openApp(page: Page) {
   await page.waitForSelector('body[data-ready="true"]');
 }
 
+/** Fills and submits the form like a viewer would; the card shows up via the server's "created" event. */
 export async function addIdea(
   page: Page,
   { text = "Game", tech = "mods", viewer = "Ann" }: { text?: string; tech?: string; viewer?: string } = {}
@@ -47,7 +48,8 @@ export async function addIdea(
 }
 
 export const test = base.extend<{ errors: string[]; openTab: () => Promise<Page> }>({
-  // Shared in-memory server state: start every test from an empty list
+  // Auto fixture (runs for every test, no need to request it). The server keeps ideas in memory
+  // and is shared by all tests, so clear it first via REST.
   errors: [
     async ({ request }, use) => {
       await request.delete("/ideas");
@@ -56,13 +58,15 @@ export const test = base.extend<{ errors: string[]; openTab: () => Promise<Page>
     { auto: true }
   ],
 
+  // Wraps the built-in page: CDNs are served locally and any console/page/request error fails the test
   page: async ({ page }, use) => {
     const errors = await preparePage(page);
     await use(page);
     expect(errors, "unexpected browser errors").toEqual([]);
   },
 
-  // Opens extra independent browser sessions ("tabs" of other viewers)
+  // Opens extra independent browser sessions ("tabs" of other viewers). Each context has its own
+  // socket connection, so it is a separate viewer for realtime tests.
   openTab: async ({ browser, baseURL }, use) => {
     const contexts: import("@playwright/test").BrowserContext[] = [];
     await use(async () => {

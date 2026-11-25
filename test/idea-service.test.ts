@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { IdeaService, type Idea, type IdeaData } from "../src/app.ts";
+import { IdeaService } from "../src/app.ts";
+import type { Idea, IdeaData } from "../src/idea.js";
+import { ideaData } from "./helpers.ts";
 
+// Unit tests for the in-memory service, called directly (no server, REST or sockets).
 describe("IdeaService", () => {
   let service: IdeaService;
   beforeEach(() => {
@@ -19,7 +22,7 @@ describe("IdeaService", () => {
   it("create() assigns sequential ids", async () => {
     const ids: number[] = [];
     for (let i = 0; i < 3; i++) {
-      ids.push((await service.create({ text: "a", tech: "b", viewer: "c" })).id);
+      ids.push((await service.create(ideaData())).id);
     }
     expect(ids).toEqual([0, 1, 2]);
   });
@@ -30,6 +33,7 @@ describe("IdeaService", () => {
     expect((await service.find()).map((i: Idea) => i.text)).toEqual(["first", "second"]);
   });
 
+  // The server owns id and time; whatever a client sends for them is dropped
   it("ignores unknown fields and client-supplied id/time", async () => {
     const idea = await service.create({
       id: 99,
@@ -52,10 +56,11 @@ describe("IdeaService", () => {
   });
 
   it("instances do not share state", async () => {
-    await service.create({ text: "a", tech: "b", viewer: "c" });
+    await service.create(ideaData());
     expect(await new IdeaService().find()).toEqual([]);
   });
 
+  // remove() returns what it removed: Feathers uses the return value as the "removed" event payload
   describe("remove", () => {
     const add = (text: string) => service.create({ text, tech: "t", viewer: "v" });
 
@@ -91,6 +96,7 @@ describe("IdeaService", () => {
       expect(await service.remove(null)).toEqual([]);
     });
 
+    // ids come from a counter, not the array length, so they stay unique (the client's data-id relies on it)
     it("does not reuse ids after removal", async () => {
       await add("a");
       const b = await add("b");
@@ -113,7 +119,7 @@ describe("IdeaService", () => {
     it("is formatted as h:mm:ss a", async () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date(2024, 0, 1, 14, 5, 9));
-      const idea = await service.create({ text: "a", tech: "b", viewer: "c" });
+      const idea = await service.create(ideaData());
       expect(idea.time).toBe("2:05:09 pm");
     });
   });

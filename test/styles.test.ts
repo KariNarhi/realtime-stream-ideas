@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const read = (f: string) => readFileSync(join(process.cwd(), "public", f), "utf8");
-// Theme and app-specific styles together, as loaded by index.html
+// Theme and app-specific styles together, as loaded by index.html (a plain text check, no CSS engine)
 const css = read("gta-vi-theme.css") + read("styles.css");
 
 describe("gta-vi-theme.css + styles.css", () => {

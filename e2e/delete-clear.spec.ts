@@ -1,5 +1,6 @@
 import { test, expect, openApp, addIdea } from "./fixtures.ts";
 
+// Single-viewer delete (×) and Clear behaviour, plus button placement.
 test.describe("delete and clear", () => {
   test.beforeEach(async ({ page }) => openApp(page));
 
@@ -15,6 +16,7 @@ test.describe("delete and clear", () => {
     await expect(cards.nth(1)).toContainText("Three");
   });
 
+  // Ids come from a server counter; reusing one would make × delete the wrong card
   test("deleting works for ids created after earlier deletes (ids stay unique)", async ({ page }) => {
     await addIdea(page, { text: "Alpha" });
     await addIdea(page, { text: "Bravo" });

@@ -1,10 +1,10 @@
-interface Idea {
-  id: number;
-  text: string;
-  tech: string;
-  viewer: string;
-  time: string;
-}
+// Shared with the server. A type-only import *expression* (not an `import` statement) keeps this
+// file a classic browser script; it is erased on compile, so nothing is loaded at runtime.
+type Idea = import("./idea.js").Idea;
+
+// Flow: the form calls the "ideas" service; the server answers by emitting "created" to every
+// viewer (including the sender), and "removed" for deletes. The page only changes in those
+// event handlers (see init), so all viewers stay in sync.
 
 // Socket.io setup
 const socket = io();
@@ -24,7 +24,7 @@ async function sendIdea(e: Event) {
   const text = document.getElementById("idea-text") as HTMLInputElement;
   const tech = document.getElementById("idea-tech") as HTMLInputElement;
   const viewer = document.getElementById("idea-viewer") as HTMLInputElement;
-  // Create new idea
+  // Create new idea. Nothing is rendered here: the card appears when the "created" event arrives.
   app.service("ideas").create({
     text: text.value,
     tech: tech.value,
@@ -46,6 +46,7 @@ function removeIdeaCard(idea: Idea) {
   const card = document.querySelector(`#ideas [data-id="${idea.id}"]`);
   if (card) card.remove();
 }
+// Idea fields are user input and end up in innerHTML below, so they must be escaped (XSS)
 function escapeHtml(value: unknown) {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -54,6 +55,8 @@ function escapeHtml(value: unknown) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
+// Appends one card. idea.id is a server-generated number, so it needs no escaping.
+// data-id on the card and on the button links both to the idea (used by delete/remove).
 function renderIdea(idea: Idea) {
   document.getElementById(
     "ideas"
@@ -75,6 +78,7 @@ function renderIdea(idea: Idea) {
         </div>
       </div>`;
 }
+// Order matters: render the existing ideas first, then subscribe to live events
 async function init() {
   // Find ideas
   const ideas = await app.service("ideas").find();

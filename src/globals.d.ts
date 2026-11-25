@@ -1,4 +1,5 @@
-// Globals provided by the CDN scripts loaded in index.html
+// Globals provided by the CDN scripts loaded in index.html.
+// Only the small part of the Feathers/Socket.io client API that render_submit.ts uses is typed.
 interface FeathersService<T> {
   create(data: Partial<T>): Promise<T>;
   find(): Promise<T[]>;

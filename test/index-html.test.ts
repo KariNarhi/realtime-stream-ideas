@@ -2,22 +2,21 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { FIELD_IDS, MAX_LENGTH } from "./helpers.ts";
 
+// Parses the real public/index.html (nothing is executed) and checks the structure that
+// render_submit.ts and the CSS depend on: element ids, classes, and script/style order.
 const doc = new DOMParser().parseFromString(
   readFileSync(join(process.cwd(), "public", "index.html"), "utf8"),
   "text/html"
 );
 
 describe("index.html", () => {
-  it.each([
-    ["idea-text", "30"],
-    ["idea-tech", "30"],
-    ["idea-viewer", "20"]
-  ])("input #%s is required with maxlength %s", (id, max) => {
+  it.each(Object.entries(MAX_LENGTH))("input #%s is required with maxlength %s", (id, max) => {
     const el = doc.getElementById(id) as HTMLInputElement;
     expect(el.closest("#form")).not.toBeNull();
     expect(el.required).toBe(true);
-    expect(el.getAttribute("maxlength")).toBe(max);
+    expect(el.getAttribute("maxlength")).toBe(String(max));
   });
 
   it("has a Clear button below the submit button", () => {
@@ -41,7 +40,7 @@ describe("index.html", () => {
     expect(doc.querySelector("nav")!.classList.contains("app-nav")).toBe(true);
     expect(doc.getElementById("clear")!.classList.contains("btn-clear")).toBe(true);
     expect(doc.querySelector('#form button[type="submit"]')!.classList.contains("btn-suggest")).toBe(true);
-    for (const id of ["idea-text", "idea-tech", "idea-viewer"]) {
+    for (const id of FIELD_IDS) {
       expect(doc.getElementById(id)!.classList.contains("app-input")).toBe(true);
     }
   });

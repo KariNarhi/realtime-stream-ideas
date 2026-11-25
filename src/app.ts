@@ -7,24 +7,19 @@ import { fileURLToPath } from "node:url";
 import moment from "moment";
 // Type-only: brings in the app.channel()/app.publish() typings added by transport-commons
 import type {} from "@feathersjs/transport-commons";
+import type { Idea, IdeaData } from "./idea.js";
+
+// Data flow: a client (socket or REST) calls IdeaService -> Feathers emits "created"/"removed"
+// with the returned idea -> app.publish sends the event to the "stream" channel -> every
+// connected client receives it. The server never talks to the DOM; clients render events.
 
 // Node's ESM interop hands us module.exports (the callable express function with
 // json/rest/... attached), while the typings describe it as a namespace with a default export.
 const feathersExpress = expressModule as unknown as typeof expressModule.default &
   Omit<typeof expressModule, "default">;
 
-export interface IdeaData {
-  text: string;
-  tech: string;
-  viewer: string;
-}
-
-export interface Idea extends IdeaData {
-  id: number;
-  time: string;
-}
-
-// Idea service
+// Idea service: in-memory store (lost on restart). Feathers calls these methods for both
+// REST and Socket.io, and turns each return value into the payload of a service event.
 export class IdeaService {
   ideas: Idea[] = [];
   // Separate counter so ids stay unique after ideas are removed
@@ -35,6 +30,8 @@ export class IdeaService {
   }
 
   async create(data: IdeaData): Promise<Idea> {
+    // Only the three form fields are copied; the server owns id and time, so a client
+    // cannot set them. Fields are not validated or sanitised here (the client escapes on render).
     const idea: Idea = {
       id: this.nextId++,
       text: data.text,
@@ -67,6 +64,7 @@ export class IdeaService {
 }
 
 export function createApp() {
+  // A fresh app (and fresh IdeaService) per call, so tests get isolated state
   const app = feathersExpress(feathers());
 
   // Parse JSON
@@ -82,21 +80,23 @@ export function createApp() {
   // Serve the front-end (only public/, never app.js or package.json)
   app.use("/", feathersExpress.serveStatic(path.join(import.meta.dirname, "..", "public")));
 
-  // Register services
+  // Register services: one service, reachable over REST (/ideas) and Socket.io ("ideas")
   app.use("/ideas", new IdeaService());
 
   // Return proper HTTP status codes for service errors (e.g. 404)
   app.use(feathersExpress.errorHandler({ logger: false }));
 
-  // New connections connect to stream channel
+  // New connections connect to stream channel (every socket client joins it)
   app.on("connection", (conn: object) => app.channel("stream").join(conn));
 
-  // Publish events to stream
+  // Publish events to stream: this is what pushes created/removed to all viewers,
+  // including ones triggered through REST
   app.publish(() => app.channel("stream"));
 
   return app;
 }
 
+// Only listen when run directly (node src/app.ts); tests import createApp() instead
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const PORT = process.env.PORT || 3030;
 

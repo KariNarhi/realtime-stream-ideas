@@ -2,14 +2,20 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import { io, type Socket } from "socket.io-client";
-import { createApp, type Idea } from "../src/app.ts";
+import { createApp } from "../src/app.ts";
+import type { Idea } from "../src/idea.js";
+import { ideaData } from "./helpers.ts";
 
+// Integration tests: a real app on a random port, driven over REST (fetch) and Socket.io.
 const portOf = (s: Server) => (s.address() as AddressInfo).port;
 
+// Calls a Feathers service method over the socket: emit("create", "ideas", data).
+// The last argument is Feathers' ack callback (err, result), wrapped into a promise.
 const emit = (socket: Socket, ...args: unknown[]) =>
   new Promise<any>((resolve, reject) =>
     socket.emit(args[0] as string, ...args.slice(1), (err: unknown, res: unknown) => (err ? reject(err) : resolve(res)))
   );
+// Resolves with the payload of the next event. Feathers names service events "<path> <event>".
 const once = (socket: Socket, event: string) => new Promise<any>(resolve => socket.once(event, resolve));
 const connect = (url: string) =>
   new Promise<Socket>((resolve, reject) => {
@@ -22,7 +28,7 @@ let server: Server, url: string, sockets: Socket[];
 
 beforeEach(async () => {
   sockets = [];
-  server = await createApp().listen(0);
+  server = await createApp().listen(0); // port 0 = any free port; each test gets a new, empty app
   url = `http://localhost:${portOf(server)}`;
 });
 
@@ -31,6 +37,7 @@ afterEach(async () => {
   await new Promise(r => server.close(r));
 });
 
+// A connected socket client (a "viewer"); closed automatically in afterEach
 const client = async () => {
   const s = await connect(url);
   sockets.push(s);
@@ -46,7 +53,7 @@ const post = (body: string) =>
 
 describe("REST", () => {
   it("POST /ideas creates and GET /ideas lists", async () => {
-    const res = await post(JSON.stringify({ text: "a", tech: "b", viewer: "c" }));
+    const res = await post(JSON.stringify(ideaData()));
     expect(res.status).toBe(201);
     expect(await res.json()).toMatchObject({ id: 0, text: "a", tech: "b", viewer: "c" });
 
@@ -63,7 +70,7 @@ describe("REST", () => {
 describe("Socket.io", () => {
   it("create and find work over the socket", async () => {
     const s = await client();
-    const idea = await emit(s, "create", "ideas", { text: "a", tech: "b", viewer: "c" });
+    const idea = await emit(s, "create", "ideas", ideaData());
     expect(idea).toMatchObject({ id: 0, text: "a" });
     expect(await emit(s, "find", "ideas")).toHaveLength(1);
   });
@@ -77,6 +84,7 @@ describe("Socket.io", () => {
     expect(await gotB).toMatchObject({ text: "x" });
   });
 
+  // REST and sockets share one service, so a REST call is also published to socket viewers
   it("broadcasts REST-created ideas to socket clients", async () => {
     const s = await client();
     const got = once(s, "ideas created");
@@ -84,6 +92,7 @@ describe("Socket.io", () => {
     expect(await got).toMatchObject({ text: "rest" });
   });
 
+  // Events are not replayed: a new viewer catches up with find(), then listens for new events
   it("late joiners get existing ideas via find only", async () => {
     const early = await client();
     await emit(early, "create", "ideas", { text: "old", tech: "t", viewer: "v" });
@@ -133,6 +142,7 @@ describe("removing ideas", () => {
     expect(await gotB).toMatchObject({ id: 0 });
   });
 
+  // remove(null) returns an array, and Feathers emits one "removed" per element
   it("clearing over the socket emits one removed event per idea", async () => {
     await seed(3);
     const s = await client();
@@ -182,7 +192,7 @@ describe("createApp", () => {
   it("returns independent apps with independent state", async () => {
     const other = await createApp().listen(0);
     try {
-      await post(JSON.stringify({ text: "a", tech: "b", viewer: "c" }));
+      await post(JSON.stringify(ideaData()));
       const list = await (
         await fetch(`http://localhost:${portOf(other)}/ideas`)
       ).json();

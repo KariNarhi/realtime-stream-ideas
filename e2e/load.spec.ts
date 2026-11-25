@@ -1,5 +1,6 @@
 import { test, expect, openApp } from "./fixtures.ts";
 
+// Smoke tests for the initial page: markup, CDN globals and theme.
 test.describe("page load", () => {
   test("loads with the form, an empty list and both buttons, without browser errors", async ({ page }) => {
     await openApp(page); // the fixture fails the test on console/page/request errors

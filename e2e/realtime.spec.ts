@@ -1,6 +1,8 @@
 import type { Page } from "@playwright/test";
 import { test, expect, openApp, addIdea } from "./fixtures.ts";
 
+// A second viewer = a separate browser context with its own socket connection.
+// In these tests `page` acts and `other` only observes, so any change it sees was pushed by the server.
 async function openSecondViewer(openTab: () => Promise<Page>) {
   const other = await openTab();
   await openApp(other);
@@ -53,6 +55,7 @@ test.describe("realtime sync between viewers", () => {
     await expect(late.locator("#ideas .card")).toContainText("Early");
   });
 
+  // REST bypasses the browser entirely; the card can only appear if the server publishes the event
   test("ideas created through the REST API show up live", async ({ page, request }) => {
     await openApp(page);
     const res = await request.post("/ideas", { data: { text: "From REST", tech: "curl", viewer: "Bot" } });

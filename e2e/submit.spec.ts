@@ -1,5 +1,7 @@
 import { test, expect, openApp, addIdea } from "./fixtures.ts";
+import { FIELD_IDS, MAX_LENGTH } from "../test/helpers.ts";
 
+// Form submission end to end: browser -> server -> "created" event -> rendered card.
 test.describe("submitting ideas", () => {
   test.beforeEach(async ({ page }) => openApp(page));
 
@@ -11,11 +13,12 @@ test.describe("submitting ideas", () => {
     await expect(card.locator("strong")).toHaveText("(Mods)");
     await expect(card).toContainText("Submitted by Ann");
     await expect(card.locator("small")).toHaveText(/^\d{1,2}:\d{2}:\d{2} (am|pm)$/);
-    for (const id of ["idea-text", "idea-tech", "idea-viewer"]) {
+    for (const id of FIELD_IDS) {
       await expect(page.locator(`#${id}`)).toHaveValue("");
     }
   });
 
+  // The payload would create an <img> if it were rendered as HTML (needs a real browser to prove)
   test("XSS: idea text is shown as text, not rendered as HTML", async ({ page }) => {
     const payload = "<img src=data: onerror=__x=1>";
     await addIdea(page, { text: payload });
@@ -35,7 +38,7 @@ test.describe("submitting ideas", () => {
   });
 
   test.describe("maxlength", () => {
-    for (const [id, max] of [["idea-text", 30], ["idea-tech", 30], ["idea-viewer", 20]] as const) {
+    for (const [id, max] of Object.entries(MAX_LENGTH)) {
       test(`#${id} accepts at most ${max} characters`, async ({ page }) => {
         const input = page.locator(`#${id}`);
         await input.pressSequentially("x".repeat(max + 10));
