@@ -13,25 +13,37 @@ import type { Idea, IdeaData } from "./idea.js";
 // with the returned idea -> app.publish sends the event to the "stream" channel -> every
 // connected client receives it. The server never talks to the DOM; clients render events.
 
-// Node's ESM interop hands us module.exports (the callable express function with
-// json/rest/... attached), while the typings describe it as a namespace with a default export.
+/**
+ * `@feathersjs/express` with corrected typings: Node's ESM interop hands us module.exports (the
+ * callable express function with json/rest/... attached), while the typings describe it as a
+ * namespace with a default export.
+ */
 const feathersExpress = expressModule as unknown as typeof expressModule.default &
   Omit<typeof expressModule, "default">;
 
-// Idea service: in-memory store (lost on restart). Feathers calls these methods for both
-// REST and Socket.io, and turns each return value into the payload of a service event.
+/**
+ * Idea service: in-memory store (lost on restart). Feathers calls these methods for both
+ * REST and Socket.io, and turns each return value into the payload of a service event.
+ */
 export class IdeaService {
+  /** All current ideas, in insertion order. */
   ideas: Idea[] = [];
-  // Separate counter so ids stay unique after ideas are removed
+  /** Separate counter so ids stay unique after ideas are removed. */
   nextId = 0;
 
+  /** Returns every stored idea. */
   async find(): Promise<Idea[]> {
     return this.ideas;
   }
 
+  /**
+   * Stores a new idea. Only the three form fields are copied; the server owns `id` and `time`,
+   * so a client cannot set them. Fields are not validated or sanitised here (the client escapes
+   * on render).
+   * @param data The submitted fields.
+   * @returns The stored idea, which becomes the "created" event payload.
+   */
   async create(data: IdeaData): Promise<Idea> {
-    // Only the three form fields are copied; the server owns id and time, so a client
-    // cannot set them. Fields are not validated or sanitised here (the client escapes on render).
     const idea: Idea = {
       id: this.nextId++,
       text: data.text,
@@ -45,8 +57,12 @@ export class IdeaService {
     return idea;
   }
 
-  // remove(id) deletes one idea; remove(null) deletes all of them.
-  // Returns the removed idea(s) so Feathers emits a "removed" event for each.
+  /**
+   * Deletes one idea, or all of them.
+   * @param id Id of the idea to delete (a string when it comes from REST), or `null` to delete all.
+   * @returns The removed idea(s), so Feathers emits a "removed" event for each.
+   * @throws NotFound if no idea has the given id.
+   */
   async remove(id: number | string | null): Promise<Idea | Idea[]> {
     if (id === null || id === undefined) {
       const removed = this.ideas;
@@ -63,8 +79,12 @@ export class IdeaService {
   }
 }
 
+/**
+ * Builds the Feathers/Express app: REST + Socket.io, the static front-end and the "ideas" service.
+ * Every call returns a fresh app with its own IdeaService, so tests get isolated state.
+ * @returns The app; call `.listen(port)` to start it.
+ */
 export function createApp() {
-  // A fresh app (and fresh IdeaService) per call, so tests get isolated state
   const app = feathersExpress(feathers());
 
   // Parse JSON

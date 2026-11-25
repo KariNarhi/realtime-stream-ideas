@@ -1,8 +1,12 @@
 import type { Page } from "@playwright/test";
 import { test, expect, openApp, addIdea } from "./fixtures.ts";
 
-// A second viewer = a separate browser context with its own socket connection.
-// In these tests `page` acts and `other` only observes, so any change it sees was pushed by the server.
+/**
+ * Opens a second viewer: a separate browser context with its own socket connection.
+ * In these tests `page` acts and `other` only observes, so any change it sees was pushed by the server.
+ * @param openTab The `openTab` fixture.
+ * @returns The second viewer's page, already loaded.
+ */
 async function openSecondViewer(openTab: () => Promise<Page>) {
   const other = await openTab();
   await openApp(other);

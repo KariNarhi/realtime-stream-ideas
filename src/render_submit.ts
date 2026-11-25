@@ -19,6 +19,10 @@ document.getElementById("ideas")!.addEventListener("click", e => {
   const button = (e.target as Element).closest<HTMLElement>(".delete-idea");
   if (button) deleteIdea(button.dataset.id!);
 });
+/**
+ * Form submit handler: sends the typed idea to the server and clears the inputs.
+ * @param e The submit event (its default page reload is prevented).
+ */
 async function sendIdea(e: Event) {
   e.preventDefault();
   const text = document.getElementById("idea-text") as HTMLInputElement;
@@ -35,18 +39,29 @@ async function sendIdea(e: Event) {
   tech.value = "";
   viewer.value = "";
 }
+/**
+ * Asks the server to delete one idea. The card is removed when the server's "removed" event arrives.
+ * @param id The idea id, as read from the button's `data-id` attribute.
+ */
 function deleteIdea(id: string) {
-  // The card is removed when the server's "removed" event arrives
   return app.service("ideas").remove(Number(id));
 }
+/** Asks the server to delete every idea; cards disappear as the "removed" events arrive. */
 function clearIdeas() {
   return app.service("ideas").remove(null);
 }
+/**
+ * "removed" event handler: removes the matching card, if it is displayed.
+ * @param idea The removed idea (only its `id` is used).
+ */
 function removeIdeaCard(idea: Idea) {
   const card = document.querySelector(`#ideas [data-id="${idea.id}"]`);
   if (card) card.remove();
 }
-// Idea fields are user input and end up in innerHTML below, so they must be escaped (XSS)
+/**
+ * Escapes `& < > " '` so a value can be put into innerHTML as plain text. Idea fields are user
+ * input, so they must be escaped before rendering (XSS).
+ */
 function escapeHtml(value: unknown) {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -55,8 +70,11 @@ function escapeHtml(value: unknown) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
-// Appends one card. idea.id is a server-generated number, so it needs no escaping.
-// data-id on the card and on the button links both to the idea (used by delete/remove).
+/**
+ * Appends one idea card to the list. `idea.id` is a server-generated number, so it needs no
+ * escaping. `data-id` on the card and on the delete button links both to the idea.
+ * @param idea The idea to show (from `find()` or a "created" event).
+ */
 function renderIdea(idea: Idea) {
   document.getElementById(
     "ideas"
@@ -78,7 +96,10 @@ function renderIdea(idea: Idea) {
         </div>
       </div>`;
 }
-// Order matters: render the existing ideas first, then subscribe to live events
+/**
+ * Loads the existing ideas, then subscribes to live events. Order matters: render what is already
+ * there first, then listen for changes. Sets `data-ready` on <body> when done (tests wait for it).
+ */
 async function init() {
   // Find ideas
   const ideas = await app.service("ideas").find();

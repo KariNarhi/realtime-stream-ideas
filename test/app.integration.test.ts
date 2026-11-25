@@ -9,13 +9,17 @@ import { ideaData } from "./helpers.ts";
 // Integration tests: a real app on a random port, driven over REST (fetch) and Socket.io.
 const portOf = (s: Server) => (s.address() as AddressInfo).port;
 
-// Calls a Feathers service method over the socket: emit("create", "ideas", data).
-// The last argument is Feathers' ack callback (err, result), wrapped into a promise.
+/**
+ * Calls a Feathers service method over the socket: `emit(socket, "create", "ideas", data)`.
+ * Feathers' ack callback `(err, result)` is wrapped into a promise.
+ * @param socket The viewer's connection.
+ * @param args Method name, service name, then the method's arguments.
+ */
 const emit = (socket: Socket, ...args: unknown[]) =>
   new Promise<any>((resolve, reject) =>
     socket.emit(args[0] as string, ...args.slice(1), (err: unknown, res: unknown) => (err ? reject(err) : resolve(res)))
   );
-// Resolves with the payload of the next event. Feathers names service events "<path> <event>".
+/** Resolves with the payload of the next event. Feathers names service events `"<path> <event>"`. */
 const once = (socket: Socket, event: string) => new Promise<any>(resolve => socket.once(event, resolve));
 const connect = (url: string) =>
   new Promise<Socket>((resolve, reject) => {
@@ -37,7 +41,7 @@ afterEach(async () => {
   await new Promise(r => server.close(r));
 });
 
-// A connected socket client (a "viewer"); closed automatically in afterEach
+/** A connected socket client (a "viewer"); closed automatically in afterEach. */
 const client = async () => {
   const s = await connect(url);
   sockets.push(s);

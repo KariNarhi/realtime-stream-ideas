@@ -3,7 +3,7 @@ import { test as base, expect, type Page } from "@playwright/test";
 
 const nm = (...p: string[]) => path.join(import.meta.dirname, "..", "node_modules", ...p);
 
-// CDN URL -> local file, so the tests need no network access
+/** CDN URL pattern -> local file and content type, so the tests need no network access. */
 const CDN: [RegExp, string, string][] = [
   [/unpkg\.com\/@feathersjs\/client@5\.0\.51\/dist\/feathers\.js/, nm("@feathersjs/client/dist/feathers.js"), "text/javascript"],
   [/cdn\.socket\.io\/4\.8\.1\/socket\.io\.min\.js/, nm("socket.io-client/dist/socket.io.min.js"), "text/javascript"],
@@ -30,13 +30,20 @@ async function preparePage(page: Page) {
   return errors;
 }
 
-/** Open the app and wait until the initial load finished and realtime listeners are on. */
+/**
+ * Opens the app and waits until the initial load finished and realtime listeners are on.
+ * @param page The viewer's page.
+ */
 export async function openApp(page: Page) {
   await page.goto("/");
   await page.waitForSelector('body[data-ready="true"]');
 }
 
-/** Fills and submits the form like a viewer would; the card shows up via the server's "created" event. */
+/**
+ * Fills and submits the form like a viewer would; the card shows up via the server's "created" event.
+ * @param page The viewer's page.
+ * @param idea Field values; defaults are used for omitted ones.
+ */
 export async function addIdea(
   page: Page,
   { text = "Game", tech = "mods", viewer = "Ann" }: { text?: string; tech?: string; viewer?: string } = {}
@@ -48,8 +55,10 @@ export async function addIdea(
 }
 
 export const test = base.extend<{ errors: string[]; openTab: () => Promise<Page> }>({
-  // Auto fixture (runs for every test, no need to request it). The server keeps ideas in memory
-  // and is shared by all tests, so clear it first via REST.
+  /**
+   * Auto fixture (runs for every test, no need to request it). The server keeps ideas in memory
+   * and is shared by all tests, so clear it first via REST.
+   */
   errors: [
     async ({ request }, use) => {
       await request.delete("/ideas");
@@ -58,15 +67,17 @@ export const test = base.extend<{ errors: string[]; openTab: () => Promise<Page>
     { auto: true }
   ],
 
-  // Wraps the built-in page: CDNs are served locally and any console/page/request error fails the test
+  /** Wraps the built-in page: CDNs are served locally and any console/page/request error fails the test. */
   page: async ({ page }, use) => {
     const errors = await preparePage(page);
     await use(page);
     expect(errors, "unexpected browser errors").toEqual([]);
   },
 
-  // Opens extra independent browser sessions ("tabs" of other viewers). Each context has its own
-  // socket connection, so it is a separate viewer for realtime tests.
+  /**
+   * Opens extra independent browser sessions ("tabs" of other viewers). Each context has its own
+   * socket connection, so it is a separate viewer for realtime tests.
+   */
   openTab: async ({ browser, baseURL }, use) => {
     const contexts: import("@playwright/test").BrowserContext[] = [];
     await use(async () => {

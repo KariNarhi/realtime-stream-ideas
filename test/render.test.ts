@@ -13,15 +13,17 @@ const script = stripTypeScriptTypes(readFileSync(join(process.cwd(), "src", "ren
 // These tests run the real browser script in jsdom against the real index.html, with the
 // Feathers/Socket.io CDN globals replaced by mocks (no server involved).
 type Listener = (idea: Idea) => void;
-// Mock of app.service("ideas"): lets tests check which calls the script makes
+/** Mock of `app.service("ideas")`: lets tests check which calls the script makes. */
 let service: {
   create: ReturnType<typeof vi.fn>;
   find: ReturnType<typeof vi.fn>;
   remove: ReturnType<typeof vi.fn>;
   on: ReturnType<typeof vi.fn>;
 };
-// Handlers the script registered via service.on(event, fn). Calling listeners.created(idea)
-// simulates the server pushing an event to this viewer.
+/**
+ * Handlers the script registered via `service.on(event, fn)`. Calling `listeners.created(idea)`
+ * simulates the server pushing an event to this viewer.
+ */
 let listeners: Record<string, Listener>;
 let ioMock: ReturnType<typeof vi.fn>;
 
@@ -30,7 +32,11 @@ const first = <T extends HTMLElement = HTMLElement>(selector: string) => documen
 const all = (selector: string) => document.querySelectorAll<HTMLElement>(selector);
 
 
-// Fresh page + script run per test. `existing` is what the mocked find() returns on load.
+/**
+ * Fresh page + script run per test.
+ * @param existing What the mocked `find()` returns on load.
+ * @returns The script's functions (`api`) and the mocked `feathers` global.
+ */
 async function load(existing: Idea[] = []) {
   delete document.body.dataset.ready; // <body> survives between tests
   document.body.innerHTML = html.match(/<body[^>]*>([\s\S]*)<\/body>/)![1].replace(/<script[\s\S]*?<\/script>/g, "");
@@ -51,6 +57,7 @@ async function load(existing: Idea[] = []) {
   return { api, feathersMock };
 }
 
+/** A full idea (with server-set `id`/`time`); override fields as needed. */
 const idea = (o: Partial<Idea> = {}): Idea => ({ id: 0, text: "Doom", tech: "mods", viewer: "Ann", time: "1:00:00 pm", ...o });
 
 describe("client script", () => {
