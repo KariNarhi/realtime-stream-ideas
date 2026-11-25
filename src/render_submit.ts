@@ -46,6 +46,14 @@ function removeIdeaCard(idea: Idea) {
   const card = document.querySelector(`#ideas [data-id="${idea.id}"]`);
   if (card) card.remove();
 }
+function escapeHtml(value: unknown) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 function renderIdea(idea: Idea) {
   document.getElementById(
     "ideas"
@@ -58,11 +66,11 @@ function renderIdea(idea: Idea) {
         >&times;</button>
         <div class="card-body">
           <p class="lead">
-            ${idea.text} <strong>(${idea.tech})</strong>
+            ${escapeHtml(idea.text)} <strong>(${escapeHtml(idea.tech)})</strong>
             <br />
-            <em>Submitted by ${idea.viewer}</em>
+            <em>Submitted by ${escapeHtml(idea.viewer)}</em>
             <br />
-            <small>${idea.time}</small>
+            <small>${escapeHtml(idea.time)}</small>
           </p>
         </div>
       </div>`;

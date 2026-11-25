@@ -16,6 +16,14 @@ test.describe("submitting ideas", () => {
     }
   });
 
+  test("XSS: idea text is shown as text, not rendered as HTML", async ({ page }) => {
+    const payload = "<img src=data: onerror=__x=1>";
+    await addIdea(page, { text: payload });
+    await expect(page.locator("#ideas .card")).toHaveCount(1);
+    await expect(page.locator("#ideas img")).toHaveCount(0);
+    await expect(page.locator("#ideas .lead")).toContainText(payload);
+  });
+
   test("does not submit when a required field is empty", async ({ page }) => {
     await page.fill("#idea-text", "Doom");
     await page.fill("#idea-tech", "Mods");

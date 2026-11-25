@@ -2,9 +2,11 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const css = readFileSync(join(process.cwd(), "public", "styles.css"), "utf8");
+const read = (f: string) => readFileSync(join(process.cwd(), "public", f), "utf8");
+// Theme and app-specific styles together, as loaded by index.html
+const css = read("gta-vi-theme.css") + read("styles.css");
 
-describe("styles.css", () => {
+describe("gta-vi-theme.css + styles.css", () => {
   it.each([
     ["--deep-violet", "#3b146b"],
     ["--purple", "#7b208f"],

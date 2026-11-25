@@ -27,4 +27,3 @@ Small real-time app where viewers submit ideas for a livestream. Two halves:
 
 The browser loads `@feathersjs/client@5.0.51` and Socket.io client 4.x from CDNs, matching the Feathers 5 / Socket.io 4 server. Keep client and server versions in step when upgrading either.
 
-`renderIdea` interpolates user input into `innerHTML` unescaped (XSS risk).

@@ -84,10 +84,21 @@ describe("client script", () => {
     expect(cards[1].textContent).toContain("Two");
   });
 
-  it("KNOWN BUG: injects unescaped HTML from idea text", async () => {
+  it("escapes HTML in idea text", async () => {
     const { api } = await load();
     api.renderIdea(idea({ text: '<img src="x" id="pwned">' }));
-    expect(document.getElementById("pwned")).not.toBeNull();
+    expect(document.getElementById("pwned")).toBeNull();
+    expect(first("#ideas .lead").textContent).toContain('<img src="x" id="pwned">');
+  });
+
+  it("escapes HTML in tech, viewer and time", async () => {
+    const { api } = await load();
+    api.renderIdea(idea({ tech: "<b id=t>", viewer: "<i id=v>", time: "<u id=m>" }));
+    expect(document.querySelector("#t, #v, #m")).toBeNull();
+    const text = first("#ideas .card").textContent!;
+    expect(text).toContain("<b id=t>");
+    expect(text).toContain("<i id=v>");
+    expect(text).toContain("<u id=m>");
   });
 
   it("submitting the form creates an idea and clears inputs", async () => {
